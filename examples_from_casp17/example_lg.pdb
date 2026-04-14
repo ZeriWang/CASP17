@@ -1,0 +1,23 @@
+PFRMAT LG
+TARGET L1001
+AUTHOR 1234-5678-9000
+METHOD Example LG submission based on CASP17 format samples
+MODEL 1
+PARENT N/A
+ATOM      1 N    GLU A   1      10.982  -9.774   1.377  1.00 90.00           N  
+ATOM      2 CA   GLU A   1       9.623  -9.833   1.984  1.00 85.50           C  
+ATOM      3 N    THR A   2       7.998 -11.599   2.304  1.00 70.60           N  
+ATOM      4 CA   THR A   2       7.266 -12.832   1.907  1.00 75.60           C  
+TER
+LIGAND 001 LIG
+LSCORE 0.82
+LIG
+RDKit          3D
+
+  2  1  0  0  0  0  0  0  0  0999 V2000
+    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    1.2000    0.0000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0
+M  END
+AFFNTY 0.050 aa
+END

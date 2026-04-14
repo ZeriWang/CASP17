@@ -1,0 +1,46 @@
+# ===== 操作系统 =====
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ===== IDE / 编辑器 =====
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+.project
+*.swp
+*.swo
+
+# ===== 依赖 / 包管理 =====
+node_modules/
+vendor/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# ===== 编译 / 构建产物 =====
+*.o
+*.class
+*.dll
+*.exe
+*.so
+*.dylib
+
+# ===== 环境配置 & 敏感信息 =====
+.env
+.env.*
+!env.example
+*.pem
+*.key
+config.local.*
+
+# ===== 日志 / 临时文件 =====
+*.log
+logs/
+tmp/
+temp/

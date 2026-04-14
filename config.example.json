@@ -1,0 +1,18 @@
+{
+  "input_dir": "./examples_from_casp17",
+  "glob": "*.pdb",
+  "email": " falcon@ict.ac.cn",
+  "allowed_domain": "ict.ac.cn",
+  "endpoint": "https://predictioncenter.org/casp17/submit",
+  "timeout": 120,
+  "max_retries": 3,
+  "checkpoint": "./checkpoint.json",
+  "report": "./submission_report.json",
+  "target_filter": "",
+  "retry_failed_only": false,
+  "force_resubmit": false,
+  "dry_run": true,
+  "verbose": false,
+  "max_qa_models": 1,
+  "max_lg_models": 1
+}

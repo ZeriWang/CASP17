@@ -1,0 +1,16 @@
+PFRMAT TS
+TARGET T1201
+AUTHOR 1234-5678-9000
+METHOD Example method based on CASP17 format samples
+MODEL 1
+PARENT N/A
+ATOM      1 N    GLU A   1      10.982  -9.774   1.377  1.00 90.00           N  
+ATOM      2 CA   GLU A   1       9.623  -9.833   1.984  1.00 85.50           C  
+ATOM      3 C    GLU A   1       8.913 -11.104   1.521  1.00 82.25           C  
+ATOM      4 O    GLU A   1       9.187 -11.630   0.461  1.00 80.00           O  
+ATOM      5 N    THR A   2       7.998 -11.599   2.304  1.00 70.60           N  
+ATOM      6 CA   THR A   2       7.266 -12.832   1.907  1.00 75.60           C  
+ATOM      7 C    THR A   2       6.096 -12.456   1.005  1.00 76.40           C  
+ATOM      8 O    THR A   2       5.008 -12.217   1.466  1.00 74.90           O  
+TER
+END
