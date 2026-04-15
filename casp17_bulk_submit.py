@@ -105,7 +105,7 @@ def load_text_ascii(path: Path) -> List[str]:
     return text.splitlines()
 
 
-def parse_model_blocks(lines: List[str], issues: List[Issue]) -> List[ModelBlock]:
+def parse_model_blocks(lines: List[str], issues: List[Issue], pfrmat: str = "") -> List[ModelBlock]:
     blocks: List[ModelBlock] = []
     start_idx: Optional[int] = None
     model_no: Optional[int] = None
@@ -120,8 +120,10 @@ def parse_model_blocks(lines: List[str], issues: List[Issue]) -> List[ModelBlock
             if start_idx is not None:
                 issues.append(Issue("ERROR", "MODEL_NESTED", "Encountered MODEL before END", i))
                 continue
-            start_idx = i
+
             model_no = int(m.group(1))
+
+            start_idx = i
         elif raw == "END":
             if start_idx is None:
                 issues.append(Issue("ERROR", "END_WITHOUT_MODEL", "END appears outside MODEL block", i))
@@ -182,8 +184,6 @@ def parse_header(lines: List[str], issues: List[Issue]) -> Tuple[str, str, str]:
     if pfrmat not in {"TS", "QA", "LG"}:
         issues.append(Issue("ERROR", "PFRMAT_VALUE", "PFRMAT must be TS, QA, or LG"))
 
-    if target and not re.fullmatch(r"[THRML]\d{4}", target):
-        issues.append(Issue("ERROR", "TARGET_FORMAT", "TARGET must match [T|H|R|M|L]xxxx"))
 
     reg_code = re.fullmatch(r"\d{4}-\d{4}-\d{4}", author)
     if not reg_code:
@@ -262,7 +262,6 @@ def _is_record_keyword(s: str) -> bool:
 def validate_common_model_block(block: ModelBlock, issues: List[Issue]) -> None:
     closed_residues = set()
     current_residue: Optional[Tuple[str, str, str]] = None
-    residue_bfactors: Dict[Tuple[str, str, str], List[float]] = {}
 
     for offset, line in enumerate(block.lines, start=block.start_line):
         is_atom = line.startswith("ATOM  ") or line.startswith("HETATM")
@@ -278,7 +277,7 @@ def validate_common_model_block(block: ModelBlock, issues: List[Issue]) -> None:
             continue
         if parsed is None:
             continue
-        chain, resseq, icode, occ, bfac = parsed
+        chain, resseq, icode, occ, _bfac = parsed
 
         if not resseq:
             issues.append(Issue("ERROR", "RESSEQ_MISSING", "ATOM/HETATM residue number is missing", offset))
@@ -294,18 +293,6 @@ def validate_common_model_block(block: ModelBlock, issues: List[Issue]) -> None:
 
         if not (occ == 0.0 or 0.01 <= occ <= 1.00):
             issues.append(Issue("ERROR", "OCC_RANGE", "Occupancy must be 0.00 or within [0.01, 1.00]", offset))
-
-        if not (0.0 <= bfac <= 100.0):
-            issues.append(Issue("ERROR", "BFACTOR_RANGE", "B-factor must be within [0, 100]", offset))
-
-        residue_bfactors.setdefault(key, []).append(bfac)
-
-    if residue_bfactors:
-        residue_avg = []
-        for vals in residue_bfactors.values():
-            residue_avg.append(sum(vals) / float(len(vals)))
-        if max(residue_avg) - min(residue_avg) < 1e-9:
-            issues.append(Issue("ERROR", "BFACTOR_UNIFORM", "All residues have identical B-factor in one MODEL"))
 
 
 def validate_parent_line(parent_line: str) -> bool:
@@ -379,19 +366,14 @@ def validate_ts(parsed: ParsedFile, issues: List[Issue]) -> None:
 
 def validate_qa(parsed: ParsedFile, issues: List[Issue], max_models: int) -> None:
     blocks = parsed.model_blocks
-    if max_models < 1:
-        issues.append(Issue("ERROR", "QA_CFG", "max_qa_models must be >= 1"))
-        return
 
-    if len(blocks) < 1:
-        issues.append(Issue("ERROR", "QA_MODEL_COUNT", "QA file must contain at least one MODEL block"))
-    if len(blocks) > max_models:
-        issues.append(Issue("ERROR", "QA_MODEL_COUNT", f"QA file must contain at most {max_models} MODEL block(s)"))
+    if len(blocks) != 1:
+        issues.append(Issue("ERROR", "QA_MODEL_COUNT", "QA file must contain exactly one MODEL block"))
 
     seen_idx = set()
     for b in blocks:
-        if not (1 <= b.index <= max_models):
-            issues.append(Issue("ERROR", "QA_MODEL_INDEX", f"QA model index must be in [1, {max_models}]", b.start_line))
+        if b.index != 1:
+            issues.append(Issue("ERROR", "QA_MODEL_INDEX", "QA model index must be 1", b.start_line))
         if b.index in seen_idx:
             issues.append(Issue("ERROR", "QA_MODEL_DUP", f"Duplicate QA model index: {b.index}", b.start_line))
         seen_idx.add(b.index)
@@ -427,19 +409,16 @@ def validate_qa(parsed: ParsedFile, issues: List[Issue], max_models: int) -> Non
 
 def validate_lg(parsed: ParsedFile, issues: List[Issue], max_models: int) -> None:
     blocks = parsed.model_blocks
-    if max_models < 1:
-        issues.append(Issue("ERROR", "LG_CFG", "max_lg_models must be >= 1"))
-        return
 
     if len(blocks) < 1:
         issues.append(Issue("ERROR", "LG_MODEL_COUNT", "LG file must contain at least one MODEL block"))
-    if len(blocks) > max_models:
-        issues.append(Issue("ERROR", "LG_MODEL_COUNT", f"LG file must contain at most {max_models} MODEL block(s)"))
+    if len(blocks) > 5:
+        issues.append(Issue("ERROR", "LG_MODEL_COUNT", "LG file must contain at most 5 MODEL block(s)"))
 
     seen_idx = set()
     for b in blocks:
-        if not (1 <= b.index <= max_models):
-            issues.append(Issue("ERROR", "LG_MODEL_INDEX", f"LG model index must be in [1, {max_models}]", b.start_line))
+        if not (1 <= b.index <= 5):
+            issues.append(Issue("ERROR", "LG_MODEL_INDEX", "LG model index must be in [1, 5]", b.start_line))
         if b.index in seen_idx:
             issues.append(Issue("ERROR", "LG_MODEL_DUP", f"Duplicate LG model index: {b.index}", b.start_line))
         seen_idx.add(b.index)
@@ -511,7 +490,7 @@ def validate_file(path: Path, max_qa_models: int = DEFAULT_MAX_QA_MODELS, max_lg
     ensure_method_before_first_model(lines, issues)
 
     pfrmat, target, author = parse_header(lines, issues)
-    blocks = parse_model_blocks(lines, issues)
+    blocks = parse_model_blocks(lines, issues, pfrmat=pfrmat)
 
     parsed = ParsedFile(path=path, lines=lines, pfrmat=pfrmat, target=target, author=author, model_blocks=blocks)
 
