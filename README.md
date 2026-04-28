@@ -21,7 +21,7 @@ It follows the server-group submission endpoint rule:
 
 ## Quick start
 
-1. Prepare files in one directory (default pattern: *.pdb).
+1. Prepare files in one directory (default pattern: *.pdb). Use --recursive for nested folders.
 2. Copy and edit config.example.json.
 3. Run validation-only dry run first.
 4. Run real upload.
@@ -59,20 +59,14 @@ python3 casp17_bulk_submit.py \
   --retry-failed-only
 ```
 
-If your official checks confirm LG allows top poses (for example top 5), run:
+Recursive scan under input-dir:
 
 ```bash
 python3 casp17_bulk_submit.py \
-  --config config.example.json \
-  --max-lg-models 5
-```
-
-If QA for your target set allows multiple MODEL blocks, run:
-
-```bash
-python3 casp17_bulk_submit.py \
-  --config config.example.json \
-  --max-qa-models 5
+  --input-dir examples_from_casp17 \
+  --recursive \
+  --dry-run \
+  --email you@example.com
 ```
 
 ## Key CLI options
@@ -90,9 +84,8 @@ python3 casp17_bulk_submit.py \
 - --dry-run: validate only
 - --force-resubmit: allow overwrite behavior
 - --retry-failed-only: only process known failed hashes
+- --recursive: scan input-dir recursively
 - --verbose: print per-file validation summary
-- --max-qa-models: max QA MODEL blocks allowed (default 1)
-- --max-lg-models: max LG MODEL blocks allowed (default 1)
 
 ## What strict validation checks
 
@@ -105,8 +98,6 @@ Common checks:
 - at least one MODEL ... END block
 - no duplicate non-contiguous residues in one MODEL
 - occupancy in {0.00} or [0.01, 1.00]
-- B-factor in [0, 100]
-- residue-level B-factors cannot be all identical in one MODEL
 
 TS checks:
 - up to 6 models
@@ -117,15 +108,15 @@ TS checks:
 - ATOM/HETATM required
 
 QA checks:
-- max MODEL block count controlled by --max-qa-models (default 1)
-- model index in [1, max_qa_models]
+- exactly one MODEL block
+- model index must be 1
 - no duplicate model index
 - each score line must contain overall score in [0,1]
 - interface scores format CH:score and each in [0,1]
 
 LG checks:
-- max MODEL block count controlled by --max-lg-models (default 1)
-- model index in [1, max_lg_models]
+- up to 5 MODEL blocks
+- model index in [1, 5]
 - no duplicate model index
 - each LIGAND block must close with M  END
 - LIGAND id must be numeric
@@ -141,7 +132,6 @@ LG checks:
 ## Notes
 
 - Defaults remain strict (QA=1, LG=1) for safety.
-- Increase QA/LG model limits only after validating your current CASP17 target-specific rules.
 - CASP may still reject files based on server-side logic not fully inferable from format text.
 - For model 6 in TS, CASP mentions organizer-provided MSA special case. This script warns but does not auto-block model 6.
 - Always test with --dry-run before real upload.

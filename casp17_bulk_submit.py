@@ -3,7 +3,7 @@
 
 This tool is designed for CASP17 server-group submissions and follows the
 rules published at:
-https://predictioncenter.org/casp17/index.cgi\?page\=format
+https://predictioncenter.org/casp17/index.cgi?page=format
 
 Default behavior:
 - Scans one directory for .pdb files.
@@ -591,7 +591,9 @@ def submit_with_retry(
     }
 
 
-def discover_files(input_dir: Path, pattern: str) -> List[Path]:
+def discover_files(input_dir: Path, pattern: str, recursive: bool = False) -> List[Path]:
+    if recursive and "**" not in pattern:
+        pattern = f"**/{pattern}"
     files = sorted([p for p in input_dir.glob(pattern) if p.is_file()])
     return files
 
@@ -623,6 +625,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--force-resubmit", action="store_true", help="Allow overwriting previously successful target/category/model keys")
     parser.add_argument("--dry-run", action="store_true", help="Validate only, do not upload")
     parser.add_argument("--verbose", action="store_true", help="Print detailed per-file diagnostics")
+    parser.add_argument("--recursive", action="store_true", help="Recursively scan for files under input-dir")
     parser.add_argument("--max-qa-models", type=int, default=None, help="Max MODEL blocks allowed for QA (default: 1)")
     parser.add_argument("--max-lg-models", type=int, default=None, help="Max MODEL blocks allowed for LG (default: 1)")
     return parser.parse_args()
@@ -654,6 +657,7 @@ def merge_config(args: argparse.Namespace) -> Dict[str, object]:
         "force_resubmit": bool(args.force_resubmit or cfg.get("force_resubmit", False)),
         "dry_run": bool(args.dry_run or cfg.get("dry_run", False)),
         "verbose": bool(args.verbose or cfg.get("verbose", False)),
+        "recursive": bool(args.recursive or cfg.get("recursive", False)),
         "max_qa_models": int(pick("max_qa_models", DEFAULT_MAX_QA_MODELS)),
         "max_lg_models": int(pick("max_lg_models", DEFAULT_MAX_LG_MODELS)),
     }
@@ -690,7 +694,7 @@ def main() -> int:
         {"version": 1, "updated_at": None, "submissions": [], "successful_model_keys": {}, "failed_hashes": {}},
     )
 
-    files = discover_files(input_dir, str(cfg["glob"]))
+    files = discover_files(input_dir, str(cfg["glob"]), recursive=bool(cfg["recursive"]))
     if not files:
         print("No files found for pattern.")
         return 0
@@ -706,6 +710,7 @@ def main() -> int:
             "dry_run": cfg["dry_run"],
             "retry_failed_only": cfg["retry_failed_only"],
             "force_resubmit": cfg["force_resubmit"],
+            "recursive": cfg["recursive"],
             "max_qa_models": cfg["max_qa_models"],
             "max_lg_models": cfg["max_lg_models"],
         },
